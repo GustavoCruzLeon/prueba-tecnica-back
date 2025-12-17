@@ -1,40 +1,41 @@
-# Caso 1: CRUD Básico
+# Caso 2: CRUD con Autenticación
 
 ## Descripción
 
-En este caso, deberás implementar un CRUD básico para una o más entidades sin autenticación. El objetivo es evaluar tu capacidad para trabajar con las operaciones básicas de Express (Create, Read, Update, Delete) siguiendo cualquier arquitectura (A elección del practicante).
+En este caso, deberás implementar un CRUD para una entidad con autenticación basada en JWT. Además, deberás incluir paginación, filtrado y ordenamiento en las consultas.
 
 ## Historias de Usuario
 
-1. **HU-01** : Como usuario, quiero poder crear registros para una entidad principal (Libro) y asignarlos a una entidad relacionada (Autor).
-2. **HU-02** : Como usuario, quiero poder listar todos los libros junto con su autor correspondiente.
-3. **HU-03** : Como usuario, quiero poder ver los detalles de un libro específico, incluyendo su autor.
-4. **HU-04** : Como usuario, quiero poder actualizar un libro existente, incluyendo su relación con el autor.
-5. **HU-05** : Como usuario, quiero poder eliminar un libro.
+1. **HU-01** : Como usuario nuevo, quiero tener la posibilidad de registrarme en la aplicación.
+2. **HU-02** : Como usuario registrado, quiero tener la posibilidad de autenticarme en la aplicación.
+3. **HU-03** : Como usuario autenticado, quiero poder crear registros.
+4. **HU-04** : Como usuario autenticado, quiero poder listar registros con paginación.
+5. **HU-05** : Como usuario autenticado, quiero poder filtrar registros por usuario que lo creó.
+5. **HU-06** : Como usuario autenticado, quiero poder filtrar por registros creados por mí.
+6. **HU-07** : Como usuario autenticado, quiero poder ordenar registros por fecha de creación.
+7. **HU-08** : Como usuario autenticado, quiero poder actualizar y eliminar registros.
 
 ## Especificaciones
 
-- Entidades sugeridas: Libro (principal) y Autor (relacionada).
-- Implementa una relación de uno a muchos (1:N) : Un autor puede tener muchos libros, pero un libro pertenece a un solo autor.
-- No es necesario implementar autenticación.
-- Incluye validaciones básicas en los formularios.
-- Asegúrate de mostrar correctamente las relaciones en las vistas.
-- Implementar manejo de errores predeterminados, para errores no tan comunes usar status 500.
+- Entidad sugerida: Post.
+- Implementa autenticación con JWT.
+- Usa paginación para listar registros.
+- Añade endpoints para filtrar y ordenar.
 - Construir una base de datos en MySQL y realizar migraciones con datos de ejemplo para la revisión.
 - Realizar las validaciones respectivas en las entidades de Base de Datos.
 
 ## Detalles de las entidades
 
-**Autor**
+**Usuario**
 
 - id: Autoincremental, Primary Key, Integer.
 - name: string, not null.
 - email: string, not null, email válida y único.
+- password: string, not null, mínimo 8 carácteres, mínimo 1 mayúscula, 1 número y un carácter especial.
 
-**Libro**
+**Post**
 
 - id: Autoincremental, Primary Key, Integer.
 - title: string, not null.
-- description: string, not null.
-- price: float, not null.
-- author_id: Foreign Key de id (de la entidad Autor), Implementar eliminación en cascada.
+- content: string, not null.
+- user_id: Foreign Key de id (de la entidad Usuario), Implementar eliminación en cascada.
