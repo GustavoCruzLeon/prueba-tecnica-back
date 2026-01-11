@@ -1,41 +1,145 @@
 # Caso 2: CRUD con Autenticación
 
-## Descripción
+API RESTful en Go que implementa autenticación JWT, paginación, filtrado y ordenamiento para la gestión de posts.
 
-En este caso, deberás implementar un CRUD para una entidad con autenticación basada en JWT. Además, deberás incluir paginación, filtrado y ordenamiento en las consultas.
+## Resumen
 
-## Historias de Usuario
+- **Autenticación segura** con JWT y validación de contraseñas.
+- **CRUD de posts** con control de acceso: solo los dueños pueden editar/eliminar sus posts.
+- **Listado avanzado**: paginación, filtrado por usuario y ordenamiento por fecha.
+- **Arquitectura limpia**: separación en capas con DTOs para no exponer la base de datos.
+- **Validaciones**: contraseña fuerte, tokens expirados, accesos no autorizados.
 
-1. **HU-01** : Como usuario nuevo, quiero tener la posibilidad de registrarme en la aplicación.
-2. **HU-02** : Como usuario registrado, quiero tener la posibilidad de autenticarme en la aplicación.
-3. **HU-03** : Como usuario autenticado, quiero poder crear registros.
-4. **HU-04** : Como usuario autenticado, quiero poder listar registros con paginación.
-5. **HU-05** : Como usuario autenticado, quiero poder filtrar registros por usuario que lo creó.
-5. **HU-06** : Como usuario autenticado, quiero poder filtrar por registros creados por mí.
-6. **HU-07** : Como usuario autenticado, quiero poder ordenar registros por fecha de creación.
-7. **HU-08** : Como usuario autenticado, quiero poder actualizar y eliminar registros.
+---
 
-## Especificaciones
+## Tecnologías
 
-- Entidad sugerida: Post.
-- Implementa autenticación con JWT.
-- Usa paginación para listar registros.
-- Añade endpoints para filtrar y ordenar.
-- Construir una base de datos en MySQL y realizar migraciones con datos de ejemplo para la revisión.
-- Realizar las validaciones respectivas en las entidades de Base de Datos.
+| Capa | Tecnología |
+|------|-----------|
+| Lenguaje | Go 1.22+ |
+| Framework Web | [Gin](https://gin-gonic.com/) |
+| ORM | [GORM](https://gorm.io/) |
+| Autenticación | [golang-jwt/jwt](https://github.com/golang-jwt/jwt) |
+| Gestión de entorno | [godotenv](https://github.com/joho/godotenv) |
+| Base de datos | MySQL |
 
-## Detalles de las entidades
+---
 
-**Usuario**
+## Estructura del Proyecto
 
-- id: Autoincremental, Primary Key, Integer.
-- name: string, not null.
-- email: string, not null, email válida y único.
-- password: string, not null, mínimo 8 carácteres, mínimo 1 mayúscula, 1 número y un carácter especial.
+```
+internal/
+├── dto/             # DTOs para requests/responses (sin exposición de BD)
+├── models/          # Modelos de base de datos (User, Post)
+├── service/         # Lógica de negocio (auth, posts, JWT)
+├── transport/       # Handlers HTTP (Gin)
+└── middleware/      # Middleware de autenticación JWT
+```
 
-**Post**
+---
 
-- id: Autoincremental, Primary Key, Integer.
-- title: string, not null.
-- content: string, not null.
-- user_id: Foreign Key de id (de la entidad Usuario), Implementar eliminación en cascada.
+## Instrucciones de Uso
+
+### Requisitos
+- Go 1.22+
+- MySQL
+- Base de datos creada (ej. `prueba_caso2`)
+
+### Configuración
+1. Clona el proyecto:
+   ```bash
+   git clone <tu-repo>
+   cd prueba-tecnica-back
+   ```
+
+2. Crea `.env`:
+   
+   Edita con tus credenciales de MySQL y una clave JWT segura.
+
+3. Instala dependencias:
+   ```bash
+   go mod tidy
+   ```
+
+4. Ejecuta:
+   ```bash
+   go run main.go
+   ```
+   La API estará en `http://localhost:8080`.
+
+---
+
+## Endpoints
+
+### Autenticación (públicos)
+| Método | Ruta | Descripción |
+|--------|------|------------|
+| `POST` | `/register` | Registrar usuario |
+| `POST` | `/login`    | Iniciar sesión |
+
+### Posts (protegidos con JWT)
+| Método | Ruta | Descripción |
+|--------|------|------------|
+| `POST`   | `/posts`          | Crear post |
+| `GET`    | `/posts`          | Listar posts (mis posts por defecto) |
+| `GET`    | `/posts/:id`      | Ver post específico |
+| `PUT`    | `/posts/:id`      | Actualizar post (solo dueño) |
+| `DELETE` | `/posts/:id`      | Eliminar post (solo dueño) |
+
+### Parámetros de consulta (en `GET /posts`)
+- `page=1` → número de página (por defecto: 1)
+- `limit=10` → posts por página (máx: 100)
+- `user_id=2` → filtrar por usuario (opcional)
+- `sort_order=asc|desc` → ordenar por fecha (por defecto: `desc`)
+
+> Todas las rutas de posts requieren header:  
+> `Authorization: Bearer <tu_token>`
+
+---
+
+## Ejemplo de flujo en Postman
+
+1. **Registro**:
+   ```json
+   POST /register
+   { "name": "José", "email": "jose@example.com", "password": "Passw0rd!" }
+   ```
+
+2. **Login**:
+   ```json
+   POST /login
+   { "email": "jose@example.com", "password": "Passw0rd!" }
+   ```
+   → Guarda el `token`.
+
+3. **Crear post**:
+   ```json
+   POST /posts
+   Authorization: Bearer <token>
+   { "title": "Hola", "content": "Primer post" }
+   ```
+
+4. **Listar mis posts**:
+   ```http
+   GET /posts
+   Authorization: Bearer <token>
+   ```
+
+---
+
+## Seguridad
+
+- Contraseñas hasheadas con `bcrypt`.
+- Tokens JWT firmados con clave secreta.
+- Validación de permisos en cada operación sensible.
+- DTOs evitan exposición de campos sensibles (como `password`).
+
+---
+
+## Notas
+
+- Al iniciar, la app crea las tablas `users` y `posts` si no existen.
+- El campo `user_id` en posts es obligatorio y se relaciona con el usuario autenticado.
+- Si no se envía `user_id` en `GET /posts`, se filtra automáticamente por el usuario del token.
+
+---
