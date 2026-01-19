@@ -3,17 +3,17 @@ package application
 import (
 	"errors"
 	"prueba-tecnica-back/internal/identity/domain"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type RegisterUseCase struct {
-	userRepo     domain.UserRepository
-	passwordHash func(password string) (string, error)
+	userRepo domain.UserRepository
 }
 
-func NewRegisterUseCase(userRepo domain.UserRepository, passwordHash func(string) (string, error)) *RegisterUseCase {
+func NewRegisterUseCase(userRepo domain.UserRepository) *RegisterUseCase {
 	return &RegisterUseCase{
-		userRepo:     userRepo,
-		passwordHash: passwordHash,
+		userRepo: userRepo,
 	}
 }
 
@@ -27,7 +27,7 @@ func (u *RegisterUseCase) Execute(name, email, password string) (*domain.User, e
 		return nil, errors.New("email already registered")
 	}
 
-	hashedPassword, err := u.passwordHash(password)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func (u *RegisterUseCase) Execute(name, email, password string) (*domain.User, e
 	user := &domain.User{
 		Name:     name,
 		Email:    email,
-		Password: hashedPassword,
+		Password: string(hashedPassword),
 	}
 
 	err = u.userRepo.Save(user)

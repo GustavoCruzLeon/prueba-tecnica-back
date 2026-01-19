@@ -1,19 +1,20 @@
 package application
 
 import (
+	"encoding/base64"
 	"errors"
 	"prueba-tecnica-back/internal/product/domain"
+
+	"github.com/skip2/go-qrcode"
 )
 
 type GenerateQRUseCase struct {
 	productRepo domain.ProductRepository
-	qrGenerator func(data string) (string, error)
 }
 
-func NewGenerateQRUseCase(productRepo domain.ProductRepository, qrGenerator func(string) (string, error)) *GenerateQRUseCase {
+func NewGenerateQRUseCase(productRepo domain.ProductRepository) *GenerateQRUseCase {
 	return &GenerateQRUseCase{
 		productRepo: productRepo,
-		qrGenerator: qrGenerator,
 	}
 }
 
@@ -27,13 +28,18 @@ func (u *GenerateQRUseCase) Execute(productID uint) (*domain.Product, error) {
 		return nil, err
 	}
 
-	qrData := "Product ID: " + string(rune(product.ID)) + ", Name: " + product.Name
-	qrCode, err := u.qrGenerator(qrData)
+	qrData := "Product ID: " + string(rune(product.ID)) + ", Name: " + product.Name + ", Price: $" + string(rune(int(product.Price)))
+
+	// Generar el QR en formato PNG
+	png, err := qrcode.Encode(qrData, qrcode.Medium, 256)
 	if err != nil {
 		return nil, err
 	}
 
-	product.QRCode = qrCode
+	// Convertir a base64
+	qrBase64 := base64.StdEncoding.EncodeToString(png)
+	product.QRCode = "data:image/png;base64," + qrBase64
+
 	err = u.productRepo.Update(product)
 	if err != nil {
 		return nil, err

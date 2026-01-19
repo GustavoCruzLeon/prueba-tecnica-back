@@ -3,23 +3,20 @@ package application
 import (
 	"errors"
 	"prueba-tecnica-back/internal/identity/domain"
+	"prueba-tecnica-back/internal/identity/infrastructure/jwt"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type LoginUseCase struct {
-	userRepo        domain.UserRepository
-	passwordCompare func(hashedPassword, password string) bool
-	tokenGenerator  func(userID uint) (string, error)
+	userRepo   domain.UserRepository
+	jwtService *jwt.JWTService
 }
 
-func NewLoginUseCase(
-	userRepo domain.UserRepository,
-	passwordCompare func(string, string) bool,
-	tokenGenerator func(uint) (string, error),
-) *LoginUseCase {
+func NewLoginUseCase(userRepo domain.UserRepository, jwtService *jwt.JWTService) *LoginUseCase {
 	return &LoginUseCase{
-		userRepo:        userRepo,
-		passwordCompare: passwordCompare,
-		tokenGenerator:  tokenGenerator,
+		userRepo:   userRepo,
+		jwtService: jwtService,
 	}
 }
 
@@ -33,11 +30,12 @@ func (u *LoginUseCase) Execute(email, password string) (*domain.User, string, er
 		return nil, "", errors.New("invalid credentials")
 	}
 
-	if !u.passwordCompare(user.Password, password) {
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	if err != nil {
 		return nil, "", errors.New("invalid credentials")
 	}
 
-	token, err := u.tokenGenerator(user.ID)
+	token, err := u.jwtService.GenerateToken(user.ID)
 	if err != nil {
 		return nil, "", err
 	}
